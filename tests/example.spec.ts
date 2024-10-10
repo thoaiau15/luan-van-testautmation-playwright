@@ -1,18 +1,35 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, chromium } from '@playwright/test';
 
-test('has title', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+const cookiePath = '/Users/macbookpro/Library/Application Support/Google/Chrome';
+const pathToExtension = 'path/to/your/extension'; // Đường dẫn đến extension của bạn
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
-});
+test('Google login test', async () => {
+    // Khởi tạo trình duyệt với context tồn tại
+    const context = await chromium.launchPersistentContext(cookiePath, {
+        headless: false,
+        args: [
+            `--disable-extensions-except=${pathToExtension}`,
+            `--load-extension=${pathToExtension}`,
+        ],
+    });
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+    // Tạo một trang mới
+    const page = await context.newPage();
+    const loginUrl = "https://accounts.google.com/signin/v2/identifier?hl=ja&flowName=GlifWebSignIn&flowEntry=ServiceLogin"; 
+    
+    // Điều hướng đến trang đăng nhập
+    await page.goto(loginUrl);
 
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
+    // Nhập thông tin đăng nhập
+    await page.fill('#identifierId', 'hinhgiai2.thoai@gmail.com'); // Thay thế bằng email của bạn
+    await page.click("#identifierNext");
+    await page.fill('[name=password]', 'Tho@i@u15'); // Thay thế bằng mật khẩu của bạn
+    await page.click("#passwordNext");
 
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+    // Kiểm tra xem có đăng nhập thành công không
+    await page.waitForNavigation();
+    expect(page.url()).toContain('https://myaccount.google.com/'); // Kiểm tra URL trang tài khoản Google
+
+    // Đóng context và trình duyệt sau khi test hoàn thành
+    await context.close();
 });
